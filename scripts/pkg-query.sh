@@ -15,7 +15,7 @@ show_summary() {
 	else
 		total_packages=$(echo "$main_query" | wc -l)
 
-	 	total_size=$(echo "$main_query" | awk 'NR > 1 {sum += $4} END {print sum}')
+	 	total_size=$(echo "$main_query" | awk -F'|' '{sum += $4} END {print sum}')
 		
 		formatted_size=$(echo "$total_size" | awk '{
 			size_length = length($1);
