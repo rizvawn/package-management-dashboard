@@ -1,49 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-list_packages() {
-
-	if rpm -qa | grep -i "${1:-}" >/dev/null 2>&1; then
-		rpm -qa --queryformat '%{NAME}|%{VERSION}-%{RELEASE}|%{ARCH}|%{SIZE}|%{INSTALLTIME:date}\n' | \
-        sort | \
-		if [[ -n "${1:-}" ]]; then
-			grep -i "${1:-}"
-		else
-			cat
-		fi | \
-			column -t -s '|' -N "PACKAGE,VERSION,ARCH,SIZE(bytes),INSTALLED"
-	else
-		echo "No match found"
-	fi
-}
+main_query=$(rpm -qa --queryformat '%{NAME}|%{VERSION}-%{RELEASE}|%{ARCH}|%{SIZE}|%{INSTALLTIME:date}\n' | grep -i "${1:-}" || true )
 
 show_summary() {
 	local total_packages
-	local total_size
-
-	if rpm -qa | grep -i "${1:-}" >/dev/null 2>&1; then
-		
-		total_packages=$(rpm -qa | if [[ -n "${1:-}" ]]; then grep -i "${1:-}"; else cat; fi | wc -l)
-
-	 	total_size=$(rpm -qa --queryformat '%{SIZE} %{NAME}\n' | if [[ -n "${1:-}" ]]; then grep -i "${1:-}"; else cat; fi | \
-		awk '{sum += $1} END {print sum}')
-	else
-		total_packages=0
-		total_size=0
-	fi
-	
+	local total_size	
 	local formatted_size
-	
-	formatted_size=$(echo "$total_size" | awk '{
-		size_length = length($1);
-		if (size_length < 6) {
-			printf "%.2f KB", $1 / 1024;
-		} else if (size_length >=6 && size_length <=8) {
-			printf "%.2f MB", $1 / 1024 /1024; 
-		} else {
-			printf "%.2f GB", $1 / 1024 / 1024 /1024;
-		}
-	}') 
+
+	if [[ -z "$main_query" ]]; then
+		
+		total_packages=0
+		formatted_size=0
+	else
+		total_packages=$(echo "$main_query" | wc -l)
+
+	 	total_size=$(echo "$main_query" | awk 'NR > 1 {sum += $4} END {print sum}')
+		
+		formatted_size=$(echo "$total_size" | awk '{
+			size_length = length($1);
+			if (size_length < 6) {
+				printf "%.2f KB", $1 / 1024;
+			} else if (size_length >=6 && size_length <=8) {
+				printf "%.2f MB", $1 / 1024 /1024; 
+			} else {
+				printf "%.2f GB", $1 / 1024 / 1024 /1024;
+			}
+		}')
+	fi 
 
 	echo ""
 	echo "Summary"
@@ -57,7 +41,13 @@ main() {
 	echo "=================="
 	echo ""
 
-	list_packages "$@"
+	if [[ -z "$main_query" ]]; then 
+		echo "No match found" 
+	else 
+		echo "$main_query" | sort | \
+		column -t -s '|' -N "PACKAGE,VERSION,ARCH,SIZE(bytes),INSTALLED"
+	fi
+
 	show_summary "$@"
 }
 
