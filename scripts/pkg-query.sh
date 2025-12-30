@@ -3,20 +3,37 @@ set -euo pipefail
 
 list_packages() {
 
-	rpm -qa --queryformat '%{NAME}|%{VERSION}-%{RELEASE}|%{ARCH}|%{SIZE}|%{INSTALLTIME:date}\n' | \
+	if rpm -qa | grep -i "${1:-}" >/dev/null 2>&1; then
+		rpm -qa --queryformat '%{NAME}|%{VERSION}-%{RELEASE}|%{ARCH}|%{SIZE}|%{INSTALLTIME:date}\n' | \
         sort | \
-        column -t -s '|' -N "PACKAGE,VERSION,ARCH,SIZE(bytes),INSTALLED"
+		if [[ -n "${1:-}" ]]; then
+			grep -i "${1:-}"
+		else
+			cat
+		fi | \
+			column -t -s '|' -N "PACKAGE,VERSION,ARCH,SIZE(bytes),INSTALLED"
+	else
+		echo "No match found"
+	fi
 }
 
-show_summary(){
+show_summary() {
 	local total_packages
 	local total_size
 
-	total_packages=$(rpm -qa | wc -l)
+	if rpm -qa | grep -i "${1:-}" >/dev/null 2>&1; then
+		
+		total_packages=$(rpm -qa | if [[ -n "${1:-}" ]]; then grep -i "${1:-}"; else cat; fi | wc -l)
 
-	total_size=$(rpm -qa --queryformat '%{SIZE}\n' | \
+	 	total_size=$(rpm -qa --queryformat '%{SIZE} %{NAME}\n' | if [[ -n "${1:-}" ]]; then grep -i "${1:-}"; else cat; fi | \
 		awk '{sum += $1} END {print sum}')
+	else
+		total_packages=0
+		total_size=0
+	fi
+	
 	local formatted_size
+	
 	formatted_size=$(echo "$total_size" | awk '{
 		size_length = length($1);
 		if (size_length < 6) {
@@ -40,8 +57,8 @@ main() {
 	echo "=================="
 	echo ""
 
-	list_packages
-	show_summary
+	list_packages "$@"
+	show_summary "$@"
 }
 
 main "$@"
