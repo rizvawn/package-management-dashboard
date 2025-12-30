@@ -37,6 +37,7 @@ show_summary() {
 }
 
 main() {
+	echo ""
 	echo "Package Query Tool"
 	echo "=================="
 	echo ""
@@ -49,6 +50,7 @@ main() {
 	fi
 
 	show_summary "$@"
+	echo ""
 }
 
 main "$@"
