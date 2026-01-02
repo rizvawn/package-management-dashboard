@@ -9,29 +9,42 @@ fi
 
 search_packages() {
 	local search_term="$1"
+	local results_file
+	results_file="/tmp/pkg-search-$$.txt"
 
-	echo "Searching for: $search_term"
-	echo ""
-
-	dnf search "$search_term" 2>/dev/null | \
-	grep -E '^\S+\s+:' | \
-	awk -F' : ' '{print $1}' | sort -u
+	echo "PACKAGE|STATUS|SUMMARY" > "$results_file"
 	
-}
+	local dnf_output
+	dnf_output=$(dnf search "$search_term" 2>/dev/null || true)
 
-get_package_status() {
-	local package="$1"
-
-	local info
-	info=$(dnf info "$package" 2>/dev/null || true)
-
-	if echo "$info" | grep -q "^Installed packages"; then
-		echo -e "${package} is installed.\n"
-	elif echo "$info" | grep -q "^Available packages"; then
-		echo -e "${package} is available to install.\n"
-	else
-		echo -e "${package} has no matching package.\n"
+	if [[ -z "$dnf_output" ]]; then
+		echo "No packages found matching: ${search_term}"
+		rm -f "$results_file"
+		return 1
 	fi
+
+	local matched_packages
+	matched_packages=$(echo "$dnf_output" | grep -E '^\s*\S+\s+' | grep -v '^Matched' | grep -v '^Name ' | sort -u)
+		
+	while IFS= read -r line; do
+		local pkg_full
+		local summary
+		pkg_full=$(echo "$line" | awk '{print $1}')
+		summary=$(echo "$line" | cut -f2- -d$'\t' | sed 's/^[[:space:]]*//' | cut -c1-80)
+
+		local status
+		local pkg_name="${pkg_full%.*}"
+		if rpm -q "$pkg_name" >/dev/null 2>&1; then
+			status="✓ Installed"
+		else
+			status="Available"
+		fi
+		
+		echo "$pkg_full|$status|$summary" >> "$results_file"
+	done <<< "$matched_packages"
+	
+	column -t -s '|' < "$results_file"
+	rm -f "$results_file"
 }
 
 main() {
@@ -40,7 +53,11 @@ main() {
 	echo "==================="
 	echo ""
 
-	get_package_status "$1"
+	search_packages "$1"
+
+	echo ""
+	echo "Tip: Use 'dnf info <package>' for detailed information"
+	echo ""
 }
 
 main "$@"
