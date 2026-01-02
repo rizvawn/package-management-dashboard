@@ -50,7 +50,7 @@ show_changelog() {
 		rpm -q --changelog "$PACKAGE" | head -15 || true
 		echo ""
 	else
-		echo "${PACKAGE} not installed (changelog unavailable)"
+		echo "${PACKAGE} not installed (change log unavailable)"
 		echo ""
 	fi
 }
