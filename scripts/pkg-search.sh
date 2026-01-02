@@ -17,10 +17,11 @@ search_packages() {
 	local dnf_output
 	dnf_output=$(dnf search "$search_term" 2>/dev/null)
 
-	if [[ $dnf_output =~ "No" ]]; then
+	if echo "$dnf_output" | grep -q "No matches found"; then
 		echo "No packages found matching: ${search_term}"
+		echo ""
 		rm -f "$results_file"
-		return 0
+		return 1
 	fi
 
 	local matched_packages
