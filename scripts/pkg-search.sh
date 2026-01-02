@@ -15,12 +15,12 @@ search_packages() {
 	echo "PACKAGE|STATUS|SUMMARY" > "$results_file"
 	
 	local dnf_output
-	dnf_output=$(dnf search "$search_term" 2>/dev/null || true)
+	dnf_output=$(dnf search "$search_term" 2>/dev/null)
 
-	if [[ -z "$dnf_output" ]]; then
+	if [[ $dnf_output =~ "No" ]]; then
 		echo "No packages found matching: ${search_term}"
 		rm -f "$results_file"
-		return 1
+		return 0
 	fi
 
 	local matched_packages
