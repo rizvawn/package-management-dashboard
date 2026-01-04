@@ -1,16 +1,38 @@
-#!/usr/bin/env  bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 list_repos() {
 	echo "Repository Status"
 	echo "================="
 
-	local repos
 	local repos_count
-	repos=$(dnf repolist --all 2>/dev/null | grep -v "repo id" | sort)
-	repos_count=$(echo "$repos" | wc -l)
-	echo -e "${repos}\n"
+	local results_file="/tmp/repos-$$.txt"
+
+	echo "REPO ID|STATUS|REPO NAME" > "$results_file"
+	
+	dnf repolist --all 2>/dev/null | \
+	grep -v "^repo id" | sort | \
+	while read -r line; do
+		local id=$(echo "$line" | awk '{print $1}')
+		local status=$(echo "$line" | awk '{print $NF}')
+		local name="${line#$id}"
+		name="${name%$status}"
+		name=$(echo "$name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+	
+		if [[ "$status" == "enabled" ]]; then
+			status="✓ Enabled"
+		else
+			status="✗ Disabled"
+		fi
+	
+		echo "$id|$status|$name" >> "$results_file"
+	done
+
+	column -t -s '|' < "$results_file"
+
+	repos_count=$(tail -n +2 "$results_file" | wc -l)
 	echo -e "Total repos: ${repos_count}\n"
+	rm -f "$results_file"
 }
 
 main() {
