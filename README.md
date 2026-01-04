@@ -6,6 +6,8 @@ A collection of shell-based tools for comprehensive package management analysis 
 
 This project demonstrates proficiency in Linux system administration through automated package management workflows. The tools leverage DNF5/DNF, YUM, and RPM to query, analyze, and report on system package states, dependencies, and repository health.
 
+**Unified CLI Interface**: All tools are accessible through a single `pkg` command with intuitive subcommands, providing a cohesive user experience similar to modern package managers.
+
 ## Technical Focus
 
 - **Package Management**: Deep understanding of DNF/YUM/RPM architecture and repository management
@@ -23,7 +25,24 @@ This project demonstrates proficiency in Linux system administration through aut
 
 ## Implemented Tools
 
-### pkg-query.sh
+### Unified Command: pkg
+
+A single entry point providing consistent access to all package management tools:
+
+```bash
+pkg query [pattern]    # Query installed packages
+pkg search <term>      # Search available packages
+pkg info <package>     # Show detailed package info
+pkg repos              # Analyze repositories
+pkg --help             # Show usage information
+pkg --version          # Show version
+```
+
+The `pkg` command routes to specialized scripts while providing unified help, error handling, and a professional CLI experience.
+
+### Individual Scripts
+
+#### pkg-query.sh
 
 Query and filter installed packages with summary statistics.
 
@@ -32,7 +51,7 @@ Query and filter installed packages with summary statistics.
 - Human-readable size formatting (KB/MB/GB)
 - Summary statistics showing total package count and disk usage
 
-### pkg-search.sh
+#### pkg-search.sh
 
 Search for packages across configured repositories.
 
@@ -41,7 +60,7 @@ Search for packages across configured repositories.
 - Shows package summaries
 - DNF5-compatible implementation
 
-### pkg-info.sh
+#### pkg-info.sh
 
 Comprehensive package information display.
 
@@ -51,7 +70,7 @@ Comprehensive package information display.
 - Direct dependency analysis
 - Handles both RPM (local) and DNF (remote) queries
 
-### repo-check.sh
+#### repo-check.sh
 
 Repository analysis and validation.
 
@@ -98,6 +117,7 @@ The implemented tools address common sysadmin challenges:
 
 ```text
 project-02-package-management/
+├── pkg                   # Unified CLI entry point
 ├── scripts/
 │   ├── pkg-query.sh      # Package listing and filtering
 │   ├── pkg-search.sh     # Repository package search
@@ -108,19 +128,34 @@ project-02-package-management/
 
 ## Usage Examples
 
+### Unified Command Interface (Recommended)
+
 ```bash
 # List all installed packages
-./scripts/pkg-query.sh
+./pkg query
 
 # Filter packages by name
-./scripts/pkg-query.sh python
+./pkg query python
 
 # Search for available packages
-./scripts/pkg-search.sh editor
+./pkg search editor
 
 # Get detailed package information
-./scripts/pkg-info.sh bash
+./pkg info bash
 
 # Analyze repositories
+./pkg repos
+
+# Show help
+./pkg --help
+```
+
+### Direct Script Usage (Advanced)
+
+```bash
+# Individual scripts can also be called directly
+./scripts/pkg-query.sh python
+./scripts/pkg-search.sh editor
+./scripts/pkg-info.sh bash
 ./scripts/repo-check.sh
 ```
