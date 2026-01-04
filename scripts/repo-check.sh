@@ -31,7 +31,9 @@ list_repos() {
 	column -t -s '|' < "$results_file"
 
 	repos_count=$(tail -n +2 "$results_file" | wc -l)
-	echo -e "Total repos: ${repos_count}\n"
+	enabled_count=$(grep -c '✓ Enabled' "$results_file" || true)
+	disabled_count=$(grep -c '✗ Disabled' "$results_file" || true)
+	echo -e "\nTotal repos: ${repos_count}\nEnabled: ${enabled_count}\nDisabled: ${disabled_count}\n"
 	rm -f "$results_file"
 }
 
